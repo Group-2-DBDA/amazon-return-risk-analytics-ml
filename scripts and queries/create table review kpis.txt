@@ -1,0 +1,38 @@
+CREATE EXTERNAL TABLE IF NOT EXISTS final_review_KPIS (
+    parent_asin STRING,
+    
+    total_reviews INT,
+    avg_rating DOUBLE,
+    rating_volatility DOUBLE,
+
+    verified_reviews INT,
+    unverified_reviews INT,
+    verified_5_star_pct DOUBLE,
+    verified_1_star_pct DOUBLE,
+    unverified_5_star_pct DOUBLE,
+    unverified_1_star_pct DOUBLE,
+
+    reviews_with_helpful_votes INT,
+    helpful_vote_ratio DOUBLE,
+
+    avg_review_length DOUBLE,
+
+    avg_len_5_star DOUBLE,
+    avg_len_4_star DOUBLE,
+    avg_len_3_star DOUBLE,
+    avg_len_2_star DOUBLE,
+    avg_len_1_star DOUBLE
+)
+
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+    'separatorChar' = ',',
+    'quoteChar'     = '"',
+    'escapeChar'    = '\\'
+)
+
+LOCATION 's3://amazon-data-eda/final_reviews_kpi_for_powerbi/'
+TBLPROPERTIES (
+    'skip.header.line.count' = '1',
+    'use.null.for.invalid.data' = 'true'
+);

@@ -1,0 +1,25 @@
+CREATE EXTERNAL TABLE IF NOT EXISTS final_meta22 (
+    parent_asin            STRING,
+    title                  STRING,
+    main_category           STRING,
+    category                STRING,
+    brand                  STRING,
+    manufacturer            STRING,
+    date_first_available    STRING,
+    store                   STRING,
+    price                   STRING,
+    average_rating          DOUBLE,
+    rating_number           BIGINT
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+WITH SERDEPROPERTIES (
+    'separatorChar' = ',',
+    'quoteChar'     = '"',
+    'escapeChar'    = '\\'
+)
+STORED AS TEXTFILE
+LOCATION 's3://amazon-data-eda/test folder for meta/'
+TBLPROPERTIES (
+    'skip.header.line.count' = '1',
+    'use.null.for.invalid.data' = 'true'
+);
