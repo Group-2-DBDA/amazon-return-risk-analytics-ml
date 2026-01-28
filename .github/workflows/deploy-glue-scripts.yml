@@ -1,6 +1,7 @@
 name: Deploy AWS Glue Scripts to S3
 
 on:
+  workflow_dispatch:   # 👈 MANUAL TRIGGER
   push:
     branches:
       - main
