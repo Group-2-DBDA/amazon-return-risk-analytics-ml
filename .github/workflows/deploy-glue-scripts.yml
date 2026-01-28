@@ -25,10 +25,10 @@ jobs:
 
       - name: Upload ETL on Meta Script
         run: |
-          aws s3 cp "aws_glue_scripts/ETL on Meta.py" \
+          aws s3 cp "aws_glue_scripts/ETL on meta.py" \
           "s3://glue-etl-job-7249/Etl on meta/scripts/ETL on meta.py"
 
       - name: Upload ETL on Review Script
         run: |
-          aws s3 cp "aws_glue_scripts/ETL on reviews common.py" \
+          aws s3 cp "aws_glue_scripts/ETL on Reviews.py" \
           "s3://glue-etl-job-7249/ETL on Review/scripts/ETL on Reviews.py"
