@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Return Radar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* 1. The "Aurora" Animation Keyframes */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+            animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+            animation-delay: 4s;
+        }
+
+        /* 2. Custom Scrollbar for the table */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased overflow-x-hidden selection:bg-pink-500 selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- COMPONENTS ---
+
+        // The "Glass Card" component
+        const RiskCard = ({ item, index }) => {
+            const riskScore = parseFloat(item.risk_probability) || 0;
+            const isHighRisk = riskScore > 0.7;
+            const riskColor = isHighRisk ? "text-red-400" : "text-emerald-400";
+            const borderColor = isHighRisk ? "border-red-500/50" : "border-emerald-500/50";
+
+            return (
+                <div
+                    className={`
+                        relative group
+                        backdrop-blur-md bg-white/10
+                        border border-white/20 hover:border-white/40 ${borderColor}
+                        p-6 rounded-2xl shadow-xl
+                        transition-all duration-300 hover:-translate-y-1
+                    `}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                >
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="bg-black/30 px-3 py-1 rounded-full text-xs font-mono text-gray-300 border border-white/10">
+                            ASIN: {item.parent_asin || "Unknown"}
+                        </div>
+                        <div className={`text-2xl font-bold ${riskColor}`}>
+                            {(riskScore * 100).toFixed(0)}% <span className="text-xs text-gray-400 font-normal">RISK</span>
+                        </div>
+                    </div>
+
+                    <h3 className="text-lg font-semibold leading-tight mb-3 text-white/90 line-clamp-2 min-h-[3.5rem]">
+                        {item.title || item.product_title}
+                    </h3>
+
+                    <div className="space-y-3">
+                        {/* Sentiment Velocity Bar */}
+                        <div>
+                            <div className="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Sentiment Velocity</span>
+                                <span>{item.sentiment_velocity || "0.0"}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                    style={{ width: `${Math.min((parseFloat(item.sentiment_velocity) || 0) * 10, 100)}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        {/* Driver Chip */}
+                        <div className="pt-2 border-t border-white/10 flex justify-between items-center">
+                            <span className="text-xs text-gray-400">Primary Driver</span>
+                            <span className="text-xs font-medium px-2 py-1 rounded bg-white/5 text-pink-300 border border-pink-500/30">
+                                {item.dominant_risk_driver || "Analysis Pending"}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [query, setQuery] = useState("");
+            const [category, setCategory] = useState("All Departments");
+            const [limit, setLimit] = useState(10);
+            const [data, setData] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [searched, setSearched] = useState(false);
+
+            // YOUR API URL (Already integrated)
+            const API_URL = "https://v3fq04eam7.execute-api.us-east-1.amazonaws.com/default/search";
+
+            const handleSearch = async () => {
+                setLoading(true);
+                setSearched(true);
+                try {
+                    const response = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            title: query,
+                            // Note: We are sending 'limit' even if Lambda doesn't use it yet, for future proofing
+                            limit: parseInt(limit)
+                        })
+                    });
+                    const result = await response.json();
+
+                    // Handle case where Lambda returns list or single object
+                    const items = Array.isArray(result) ? result : [result];
+                    setData(items);
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("Failed to fetch data. Check console for details.");
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="relative min-h-screen flex flex-col items-center justify-start pt-20 px-4">
+
+                    {/* --- BACKGROUND EFFECTS (The Aurora) --- */}
+                    <div className="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+                        <div className="absolute top-0 right-1/4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+                        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+                    </div>
+
+                    {/* --- HEADER --- */}
+                    <div className="text-center mb-12 relative z-10">
+                        <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400 mb-4 drop-shadow-lg">
+                            Return<span className="font-light italic text-white/50">Radar</span>
+                        </h1>
+                        <p className="text-blue-200 text-lg font-light tracking-wide">
+                            AI-Powered Amazon Product Intelligence
+                        </p>
+                    </div>
+
+                    {/* --- CONTROLS --- */}
+                    <div className="w-full max-w-4xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl mb-12">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+
+                            {/* Category Dropdown */}
+                            <div className="md:col-span-3 relative">
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Department</label>
+                                <select
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer hover:bg-black/30 transition"
+                                >
+                                    <option>All Departments</option>
+                                    <option>Health & Household</option>
+                                    <option>Electronics</option>
+                                    <option>Fashion</option>
+                                    <option>Appliances</option>
+                                    <option>Musical Instruments</option>
+                                </select>
+                                <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400">▼</div>
+                            </div>
+
+                            {/* Search Input */}
+                            <div className="md:col-span-7 relative">
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Product Keywords</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Electric Toothbrush, Gaming Mouse..."
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 placeholder-gray-500 transition"
+                                />
+                            </div>
+
+                            {/* Limit Input */}
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Limit</label>
+                                <input
+                                    type="number"
+                                    value={limit}
+                                    onChange={(e) => setLimit(e.target.value)}
+                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Search Button */}
+                        <button
+                            onClick={handleSearch}
+                            disabled={loading}
+                            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Analyzing Data...
+                                </span>
+                            ) : "Run Risk Analysis"}
+                        </button>
+                    </div>
+
+                    {/* --- RESULTS GRID --- */}
+                    <div className="w-full max-w-6xl pb-20">
+                        {searched && !loading && data.length === 0 && (
+                            <div className="text-center text-gray-400 text-xl mt-10">No products found. Try a different keyword.</div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {data.map((item, idx) => (
+                                <RiskCard key={idx} item={item} index={idx} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

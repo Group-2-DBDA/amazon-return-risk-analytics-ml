@@ -1,0 +1,11 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands: []
+  artifacts:
+    baseDirectory: final_hosting
+    files:
+      - '**/*'
+  cache:
+    paths: []
