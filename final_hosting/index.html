@@ -37,34 +37,58 @@
             transition: width 0.2s, height 0.2s, background-color 0.2s;
         }
 
-        /* --- 2. ANIMATIONS --- */
-        @keyframes moveAndMorph {
-            0% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; transform: translate(0,0) rotate(0deg); }
-            50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; transform: translate(50px, 20px) rotate(180deg); }
-            100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; transform: translate(-20px, -50px) rotate(360deg); }
-        }
-        .blob {
-            position: absolute; filter: blur(80px); z-index: -1; opacity: 0.5;
-            animation: moveAndMorph 15s infinite alternate ease-in-out;
+        /* --- 2. AGGRESSIVE BLOB ANIMATION (Fixed "Not Moving" Issue) --- */
+        @keyframes aggressiveMorph {
+            0% {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+                transform: translate(100px, -50px) scale(1.1);
+            }
+            66% {
+                border-radius: 40% 50% 30% 60%;
+                transform: translate(-50px, 50px) scale(0.9);
+            }
+            100% {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+                transform: translate(0, 0) scale(1);
+            }
         }
 
-        /* Floating Icons */
-        @keyframes floatIcon {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
+        .blob {
+            position: fixed;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: aggressiveMorph 12s infinite ease-in-out;
+            will-change: transform, border-radius;
+        }
+
+        /* --- 3. FLOATING ICONS (Bigger & More Movement) --- */
+        @keyframes activeFloat {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-60px) rotate(15deg); } /* Increased movement range */
+            100% { transform: translateY(0px) rotate(0deg); }
         }
         .floater {
-            position: fixed; font-size: 3rem; opacity: 0.1; z-index: -1;
-            animation: floatIcon 8s ease-in-out infinite; filter: grayscale(100%);
+            position: fixed;
+            font-size: 5rem; /* Bigger size as requested */
+            opacity: 0.15;
+            z-index: -1;
+            animation: activeFloat 6s ease-in-out infinite;
+            filter: grayscale(100%);
+            pointer-events: none;
         }
 
         /* Card Entry Animation */
         @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            from { opacity: 0; transform: translateY(40px) scale(0.9); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .animate-card-entry {
-            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0; /* Start hidden */
         }
 
@@ -77,7 +101,6 @@
 <body>
 
     <div id="cursor-root"></div>
-
     <div id="root"></div>
 
     <script type="text/babel">
@@ -96,7 +119,6 @@
                         dotRef.current.style.top = `${clientY}px`;
                     }
                     if (outlineRef.current) {
-                        // Add slight delay logic via Web Web Animations API for smoothness
                         outlineRef.current.animate({
                             left: `${clientX}px`,
                             top: `${clientY}px`
@@ -117,11 +139,10 @@
 
         // --- COMPONENT: RISK CARD ---
         const RiskCard = ({ item, index }) => {
-            // Use new Lambda keys (camelCase or snake_case support)
             const riskScore = parseFloat(item.riskProbability || item.risk_probability || 0);
             const severity = item.severity || "Unknown";
 
-            // Dynamic Color Logic based on Severity
+            // Dynamic Color Logic
             let colorClass = "text-emerald-400";
             let barColor = "from-emerald-500 to-teal-500";
             let borderColor = "border-emerald-500/30";
@@ -144,11 +165,10 @@
                         border border-white/10 hover:border-white/30
                         p-6 rounded-3xl shadow-2xl
                         transition-all duration-300 hover:-translate-y-2 hover:shadow-purple-900/20
-                        flex flex-col h-full
+                        flex flex-col h-full min-h-[320px]
                     `}
                     style={{ animationDelay: `${index * 100}ms` }}
                 >
-                    {/* Brand Badge & ASIN */}
                     <div className="flex justify-between items-start mb-4">
                         <span className="text-[10px] font-bold tracking-widest text-purple-300/80 uppercase bg-purple-500/10 px-2 py-1 rounded">
                             {item.brand || "GENERIC"}
@@ -158,35 +178,32 @@
                         </span>
                     </div>
 
-                    {/* Title */}
-                    <h3 className="text-lg font-medium text-white mb-6 leading-snug group-hover:text-purple-200 transition-colors">
+                    <h3 className="text-xl font-medium text-white mb-6 leading-snug group-hover:text-purple-200 transition-colors line-clamp-3">
                         {item.title}
                     </h3>
 
                     <div className="mt-auto space-y-4">
-                        {/* Risk Meter */}
                         <div>
                             <div className="flex justify-between items-end mb-1">
                                 <span className="text-xs text-gray-500 uppercase tracking-wider">Risk Probability</span>
-                                <span className={`text-2xl font-bold font-radar ${colorClass}`}>
+                                <span className={`text-3xl font-bold font-radar ${colorClass}`}>
                                     {(riskScore * 100).toFixed(0)}%
                                 </span>
                             </div>
                             <div className="w-full bg-gray-700/50 h-2 rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full bg-gradient-to-r ${barColor} shadow-[0_0_10px_currentColor] transition-all duration-1000`}
+                                    className={`h-full bg-gradient-to-r ${barColor} shadow-[0_0_15px_currentColor] transition-all duration-1000`}
                                     style={{ width: `${Math.min(riskScore * 100, 100)}%` }}
                                 ></div>
                             </div>
                         </div>
 
-                        {/* Details Footer */}
                         <div className="flex items-center justify-between text-xs pt-4 border-t border-white/5">
                             <div className="flex flex-col">
                                 <span className="text-gray-500">Sentiment Velocity</span>
-                                <span className="font-mono text-blue-300">{item.sentimentVelocity || item.sentiment_velocity || 0}</span>
+                                <span className="font-mono text-blue-300 text-sm">{item.sentimentVelocity || item.sentiment_velocity || 0}</span>
                             </div>
-                            <div className={`px-2 py-1 rounded bg-white/5 border ${borderColor} text-gray-300`}>
+                            <div className={`px-3 py-1.5 rounded-lg bg-white/5 border ${borderColor} text-gray-300 font-medium`}>
                                 {item.primaryDriver || item.dominant_risk_driver || "Pending"}
                             </div>
                         </div>
@@ -199,7 +216,7 @@
         const App = () => {
             const [query, setQuery] = useState("");
             const [category, setCategory] = useState("All Departments");
-            const [limit, setLimit] = useState(6); // Default 6 for grid layout
+            const [limit, setLimit] = useState(6);
             const [data, setData] = useState([]);
             const [loading, setLoading] = useState(false);
             const [searched, setSearched] = useState(false);
@@ -209,7 +226,7 @@
             const handleSearch = async () => {
                 setLoading(true);
                 setSearched(true);
-                setData([]); // Clear old results to show animation again
+                setData([]);
                 try {
                     const response = await fetch(API_URL, {
                         method: "POST",
@@ -222,7 +239,6 @@
                     });
                     const result = await response.json();
 
-                    // Error Handling for Empty/Error Responses
                     if (result.error || (Array.isArray(result) && result.length === 0)) {
                          setData([]);
                     } else {
@@ -239,27 +255,26 @@
                 <div className="relative min-h-screen flex flex-col items-center p-4">
                     <CustomCursor />
 
-                    {/* --- BACKGROUND ELEMENTS --- */}
+                    {/* --- BACKGROUND ELEMENTS (More Aggressive) --- */}
                     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                        <div className="blob" style={{ top: '10%', left: '10%', width: '400px', height: '400px', background: '#7e22ce' }}></div>
-                        <div className="blob" style={{ bottom: '20%', right: '10%', width: '300px', height: '300px', background: '#2563eb', animationDelay: '-5s' }}></div>
-                        <div className="blob" style={{ top: '40%', left: '40%', width: '350px', height: '350px', background: '#be185d', animationDelay: '-10s' }}></div>
+                        <div className="blob" style={{ top: '10%', left: '10%', width: '500px', height: '500px', background: '#7e22ce' }}></div>
+                        <div className="blob" style={{ bottom: '20%', right: '10%', width: '400px', height: '400px', background: '#2563eb', animationDelay: '-4s' }}></div>
+                        <div className="blob" style={{ top: '40%', left: '40%', width: '450px', height: '450px', background: '#be185d', animationDelay: '-8s' }}></div>
 
-                        {/* Floating 3D Icons */}
+                        {/* Floating 3D Icons (Bigger) */}
                         <div className="floater" style={{ top: '15%', left: '5%' }}>🎸</div>
                         <div className="floater" style={{ top: '60%', left: '8%', animationDelay: '2s' }}>👟</div>
                         <div className="floater" style={{ top: '20%', right: '10%', animationDelay: '4s' }}>🎮</div>
                         <div className="floater" style={{ top: '80%', right: '5%', animationDelay: '1s' }}>📦</div>
+                        <div className="floater" style={{ top: '40%', right: '40%', animationDelay: '3s' }}>👕</div>
                     </div>
 
                     {/* --- HEADER --- */}
-                    <div className="text-center mb-12 mt-12 relative z-10 group">
+                    <div className="text-center mb-10 mt-16 relative z-10 group">
                         <h1 className="text-6xl md:text-8xl font-bold mb-4 tracking-tighter">
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300">Return</span>
                             <span className="font-radar italic font-light ml-2 text-white/90 group-hover:text-white transition-colors">Radar</span>
                         </h1>
-
-                        {/* Impressive Subtitle Badge */}
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
                             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                             <p className="text-sm text-gray-300 tracking-wide font-mono">
@@ -278,19 +293,19 @@
                                     onChange={(e) => setCategory(e.target.value)}
                                     className="w-full h-14 bg-black/40 text-white rounded-xl px-4 appearance-none outline-none border border-transparent focus:border-purple-500/50 transition-all cursor-pointer font-radar"
                                 >
+                                    {/* UPDATED CATEGORIES AS REQUESTED */}
                                     <option>All Departments</option>
-                                    <option>Electronics</option>
-                                    <option>Computers</option>
-                                    <option>Home & Kitchen</option>
-                                    <option>Clothing</option>
-                                    <option>Toys & Games</option>
+                                    <option>Health & Household</option>
+                                    <option>Appliances</option>
+                                    <option>Fashion</option>
+                                    <option>Musical Instruments</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400">▼</div>
                             </div>
 
                             <input
                                 type="text"
-                                placeholder="Search product (e.g., 'wireless headphones')"
+                                placeholder="Search product..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -318,7 +333,7 @@
                     </div>
 
                     {/* --- RESULTS GRID --- */}
-                    <div className="w-full max-w-7xl px-4 pb-20 relative z-10">
+                    <div className="w-full max-w-7xl px-4 pb-10 relative z-10 flex-grow">
                         {searched && !loading && data.length === 0 && (
                             <div className="text-center mt-10 opacity-60">
                                 <p className="text-4xl mb-2">🚫</p>
@@ -331,6 +346,16 @@
                                 <RiskCard key={idx} item={item} index={idx} />
                             ))}
                         </div>
+                    </div>
+
+                    {/* --- NEW FOOTER --- */}
+                    <div className="w-full text-center py-10 mt-auto border-t border-white/5 bg-black/20 backdrop-blur-sm z-20">
+                        <p className="text-white/60 text-lg font-light tracking-wide mb-1">
+                            Get the products you should never by just typing what you want to buy 🤑
+                        </p>
+                        <p className="text-white/30 text-sm font-radar uppercase tracking-widest">
+                            Group 2 DBDA
+                        </p>
                     </div>
 
                 </div>
