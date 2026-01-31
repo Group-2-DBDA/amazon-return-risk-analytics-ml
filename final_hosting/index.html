@@ -3,236 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Return Radar</title>
+    <title>ReturnRadar | Neural Risk Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@300;700&display=swap" rel="stylesheet">
 
     <style>
-        /* 1. The "Aurora" Animation Keyframes */
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
+        /* --- 1. FONTS & CURSOR --- */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            cursor: none; /* Hide default cursor */
+            overflow-x: hidden;
         }
-        .animate-blob {
-            animation: blob 7s infinite;
+        .font-radar { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Custom Cursor Elements */
+        .cursor-dot, .cursor-outline {
+            position: fixed;
+            top: 0; left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
         }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-            animation-delay: 4s;
+        .cursor-dot { width: 8px; height: 8px; background-color: #a855f7; }
+        .cursor-outline {
+            width: 40px; height: 40px;
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
         }
 
-        /* 2. Custom Scrollbar for the table */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* --- 2. ANIMATIONS --- */
+        @keyframes moveAndMorph {
+            0% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; transform: translate(0,0) rotate(0deg); }
+            50% { border-radius: 30% 60% 70% 40%/50% 60% 30% 60%; transform: translate(50px, 20px) rotate(180deg); }
+            100% { border-radius: 60% 40% 30% 70%/60% 30% 70% 40%; transform: translate(-20px, -50px) rotate(360deg); }
         }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+        .blob {
+            position: absolute; filter: blur(80px); z-index: -1; opacity: 0.5;
+            animation: moveAndMorph 15s infinite alternate ease-in-out;
         }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+
+        /* Floating Icons */
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
         }
+        .floater {
+            position: fixed; font-size: 3rem; opacity: 0.1; z-index: -1;
+            animation: floatIcon 8s ease-in-out infinite; filter: grayscale(100%);
+        }
+
+        /* Card Entry Animation */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-card-entry {
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; /* Start hidden */
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-gray-900 text-white antialiased overflow-x-hidden selection:bg-pink-500 selection:text-white">
+<body>
+
+    <div id="cursor-root"></div>
 
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // --- COMPONENTS ---
+        // --- COMPONENT: CUSTOM CURSOR ---
+        const CustomCursor = () => {
+            const dotRef = useRef(null);
+            const outlineRef = useRef(null);
 
-        // The "Glass Card" component
+            useEffect(() => {
+                const moveCursor = (e) => {
+                    const { clientX, clientY } = e;
+                    if (dotRef.current) {
+                        dotRef.current.style.left = `${clientX}px`;
+                        dotRef.current.style.top = `${clientY}px`;
+                    }
+                    if (outlineRef.current) {
+                        // Add slight delay logic via Web Web Animations API for smoothness
+                        outlineRef.current.animate({
+                            left: `${clientX}px`,
+                            top: `${clientY}px`
+                        }, { duration: 500, fill: "forwards" });
+                    }
+                };
+                window.addEventListener("mousemove", moveCursor);
+                return () => window.removeEventListener("mousemove", moveCursor);
+            }, []);
+
+            return (
+                <>
+                    <div ref={dotRef} className="cursor-dot"></div>
+                    <div ref={outlineRef} className="cursor-outline"></div>
+                </>
+            );
+        };
+
+        // --- COMPONENT: RISK CARD ---
         const RiskCard = ({ item, index }) => {
-            const riskScore = parseFloat(item.risk_probability) || 0;
-            const isHighRisk = riskScore > 0.7;
-            const riskColor = isHighRisk ? "text-red-400" : "text-emerald-400";
-            const borderColor = isHighRisk ? "border-red-500/50" : "border-emerald-500/50";
+            // Use new Lambda keys (camelCase or snake_case support)
+            const riskScore = parseFloat(item.riskProbability || item.risk_probability || 0);
+            const severity = item.severity || "Unknown";
+
+            // Dynamic Color Logic based on Severity
+            let colorClass = "text-emerald-400";
+            let barColor = "from-emerald-500 to-teal-500";
+            let borderColor = "border-emerald-500/30";
+
+            if (severity === "Medium") {
+                colorClass = "text-orange-400";
+                barColor = "from-orange-500 to-yellow-500";
+                borderColor = "border-orange-500/30";
+            } else if (severity === "High" || riskScore > 0.7) {
+                colorClass = "text-red-400";
+                barColor = "from-red-600 to-pink-600";
+                borderColor = "border-red-500/30";
+            }
 
             return (
                 <div
                     className={`
-                        relative group
-                        backdrop-blur-md bg-white/10
-                        border border-white/20 hover:border-white/40 ${borderColor}
-                        p-6 rounded-2xl shadow-xl
-                        transition-all duration-300 hover:-translate-y-1
+                        animate-card-entry relative group
+                        backdrop-blur-xl bg-white/5
+                        border border-white/10 hover:border-white/30
+                        p-6 rounded-3xl shadow-2xl
+                        transition-all duration-300 hover:-translate-y-2 hover:shadow-purple-900/20
+                        flex flex-col h-full
                     `}
                     style={{ animationDelay: `${index * 100}ms` }}
                 >
+                    {/* Brand Badge & ASIN */}
                     <div className="flex justify-between items-start mb-4">
-                        <div className="bg-black/30 px-3 py-1 rounded-full text-xs font-mono text-gray-300 border border-white/10">
-                            ASIN: {item.parent_asin || "Unknown"}
-                        </div>
-                        <div className={`text-2xl font-bold ${riskColor}`}>
-                            {(riskScore * 100).toFixed(0)}% <span className="text-xs text-gray-400 font-normal">RISK</span>
-                        </div>
+                        <span className="text-[10px] font-bold tracking-widest text-purple-300/80 uppercase bg-purple-500/10 px-2 py-1 rounded">
+                            {item.brand || "GENERIC"}
+                        </span>
+                        <span className="text-[10px] font-mono text-gray-500">
+                            {item.asin || item.id || "N/A"}
+                        </span>
                     </div>
 
-                    <h3 className="text-lg font-semibold leading-tight mb-3 text-white/90 line-clamp-2 min-h-[3.5rem]">
-                        {item.title || item.product_title}
+                    {/* Title */}
+                    <h3 className="text-lg font-medium text-white mb-6 leading-snug group-hover:text-purple-200 transition-colors">
+                        {item.title}
                     </h3>
 
-                    <div className="space-y-3">
-                        {/* Sentiment Velocity Bar */}
+                    <div className="mt-auto space-y-4">
+                        {/* Risk Meter */}
                         <div>
-                            <div className="flex justify-between text-xs text-gray-400 mb-1">
-                                <span>Sentiment Velocity</span>
-                                <span>{item.sentiment_velocity || "0.0"}</span>
+                            <div className="flex justify-between items-end mb-1">
+                                <span className="text-xs text-gray-500 uppercase tracking-wider">Risk Probability</span>
+                                <span className={`text-2xl font-bold font-radar ${colorClass}`}>
+                                    {(riskScore * 100).toFixed(0)}%
+                                </span>
                             </div>
-                            <div className="h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                            <div className="w-full bg-gray-700/50 h-2 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
-                                    style={{ width: `${Math.min((parseFloat(item.sentiment_velocity) || 0) * 10, 100)}%` }}
+                                    className={`h-full bg-gradient-to-r ${barColor} shadow-[0_0_10px_currentColor] transition-all duration-1000`}
+                                    style={{ width: `${Math.min(riskScore * 100, 100)}%` }}
                                 ></div>
                             </div>
                         </div>
 
-                        {/* Driver Chip */}
-                        <div className="pt-2 border-t border-white/10 flex justify-between items-center">
-                            <span className="text-xs text-gray-400">Primary Driver</span>
-                            <span className="text-xs font-medium px-2 py-1 rounded bg-white/5 text-pink-300 border border-pink-500/30">
-                                {item.dominant_risk_driver || "Analysis Pending"}
-                            </span>
+                        {/* Details Footer */}
+                        <div className="flex items-center justify-between text-xs pt-4 border-t border-white/5">
+                            <div className="flex flex-col">
+                                <span className="text-gray-500">Sentiment Velocity</span>
+                                <span className="font-mono text-blue-300">{item.sentimentVelocity || item.sentiment_velocity || 0}</span>
+                            </div>
+                            <div className={`px-2 py-1 rounded bg-white/5 border ${borderColor} text-gray-300`}>
+                                {item.primaryDriver || item.dominant_risk_driver || "Pending"}
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
 
+        // --- MAIN APP ---
         const App = () => {
             const [query, setQuery] = useState("");
             const [category, setCategory] = useState("All Departments");
-            const [limit, setLimit] = useState(10);
+            const [limit, setLimit] = useState(6); // Default 6 for grid layout
             const [data, setData] = useState([]);
             const [loading, setLoading] = useState(false);
             const [searched, setSearched] = useState(false);
 
-            // YOUR API URL (Already integrated)
             const API_URL = "https://v3fq04eam7.execute-api.us-east-1.amazonaws.com/search";
-
 
             const handleSearch = async () => {
                 setLoading(true);
                 setSearched(true);
+                setData([]); // Clear old results to show animation again
                 try {
                     const response = await fetch(API_URL, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             title: query,
-                            // Note: We are sending 'limit' even if Lambda doesn't use it yet, for future proofing
+                            category: category,
                             limit: parseInt(limit)
                         })
                     });
                     const result = await response.json();
 
-                    // Handle case where Lambda returns list or single object
-                    const items = Array.isArray(result) ? result : [result];
-                    setData(items);
+                    // Error Handling for Empty/Error Responses
+                    if (result.error || (Array.isArray(result) && result.length === 0)) {
+                         setData([]);
+                    } else {
+                         const items = Array.isArray(result) ? result : [result];
+                         setData(items);
+                    }
                 } catch (error) {
                     console.error("Error:", error);
-                    alert("Failed to fetch data. Check console for details.");
                 }
                 setLoading(false);
             };
 
             return (
-                <div className="relative min-h-screen flex flex-col items-center justify-start pt-20 px-4">
+                <div className="relative min-h-screen flex flex-col items-center p-4">
+                    <CustomCursor />
 
-                    {/* --- BACKGROUND EFFECTS (The Aurora) --- */}
-                    <div className="fixed inset-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-                        <div className="absolute top-0 right-1/4 w-96 h-96 bg-yellow-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-                        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+                    {/* --- BACKGROUND ELEMENTS --- */}
+                    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                        <div className="blob" style={{ top: '10%', left: '10%', width: '400px', height: '400px', background: '#7e22ce' }}></div>
+                        <div className="blob" style={{ bottom: '20%', right: '10%', width: '300px', height: '300px', background: '#2563eb', animationDelay: '-5s' }}></div>
+                        <div className="blob" style={{ top: '40%', left: '40%', width: '350px', height: '350px', background: '#be185d', animationDelay: '-10s' }}></div>
+
+                        {/* Floating 3D Icons */}
+                        <div className="floater" style={{ top: '15%', left: '5%' }}>🎸</div>
+                        <div className="floater" style={{ top: '60%', left: '8%', animationDelay: '2s' }}>👟</div>
+                        <div className="floater" style={{ top: '20%', right: '10%', animationDelay: '4s' }}>🎮</div>
+                        <div className="floater" style={{ top: '80%', right: '5%', animationDelay: '1s' }}>📦</div>
                     </div>
 
                     {/* --- HEADER --- */}
-                    <div className="text-center mb-12 relative z-10">
-                        <h1 className="text-6xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400 mb-4 drop-shadow-lg">
-                            Return<span className="font-light italic text-white/50">Radar</span>
+                    <div className="text-center mb-12 mt-12 relative z-10 group">
+                        <h1 className="text-6xl md:text-8xl font-bold mb-4 tracking-tighter">
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300">Return</span>
+                            <span className="font-radar italic font-light ml-2 text-white/90 group-hover:text-white transition-colors">Radar</span>
                         </h1>
-                        <p className="text-blue-200 text-lg font-light tracking-wide">
-                            AI-Powered Amazon Product Intelligence
-                        </p>
+
+                        {/* Impressive Subtitle Badge */}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                            <p className="text-sm text-gray-300 tracking-wide font-mono">
+                                TRANSFORMER-DRIVEN SEMANTIC ENGINE
+                            </p>
+                        </div>
                     </div>
 
-                    {/* --- CONTROLS --- */}
-                    <div className="w-full max-w-4xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl mb-12">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    {/* --- SEARCH INTERFACE --- */}
+                    <div className="w-full max-w-4xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-4 shadow-2xl mb-16 relative z-20">
+                        <div className="flex flex-col md:flex-row gap-4">
 
-                            {/* Category Dropdown */}
-                            <div className="md:col-span-3 relative">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Department</label>
+                            <div className="relative min-w-[200px] group">
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
-                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer hover:bg-black/30 transition"
+                                    className="w-full h-14 bg-black/40 text-white rounded-xl px-4 appearance-none outline-none border border-transparent focus:border-purple-500/50 transition-all cursor-pointer font-radar"
                                 >
                                     <option>All Departments</option>
-                                    <option>Health & Household</option>
                                     <option>Electronics</option>
-                                    <option>Fashion</option>
-                                    <option>Appliances</option>
-                                    <option>Musical Instruments</option>
+                                    <option>Computers</option>
+                                    <option>Home & Kitchen</option>
+                                    <option>Clothing</option>
+                                    <option>Toys & Games</option>
                                 </select>
-                                <div className="absolute right-4 bottom-4 pointer-events-none text-gray-400">▼</div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-purple-400">▼</div>
                             </div>
 
-                            {/* Search Input */}
-                            <div className="md:col-span-7 relative">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Product Keywords</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Electric Toothbrush, Gaming Mouse..."
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-500 placeholder-gray-500 transition"
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search product (e.g., 'wireless headphones')"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                className="flex-1 h-14 bg-black/40 text-white rounded-xl px-6 outline-none border border-transparent focus:border-purple-500/50 transition-all placeholder-gray-500 text-lg"
+                            />
 
-                            {/* Limit Input */}
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-2">Limit</label>
+                            <div className="w-24 relative">
                                 <input
                                     type="number"
                                     value={limit}
                                     onChange={(e) => setLimit(e.target.value)}
-                                    className="w-full bg-black/20 text-white border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
+                                    className="w-full h-14 bg-black/40 text-center text-white rounded-xl outline-none border border-transparent focus:border-purple-500/50 transition-all font-mono text-lg"
                                 />
+                                <span className="absolute top-1 right-2 text-[10px] text-gray-500">MAX</span>
                             </div>
                         </div>
 
-                        {/* Search Button */}
                         <button
                             onClick={handleSearch}
                             disabled={loading}
-                            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transform transition hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full h-16 mt-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl font-bold text-xl tracking-wide hover:shadow-lg hover:shadow-purple-500/25 active:scale-[0.99] transition-all relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Analyzing Data...
-                                </span>
-                            ) : "Run Risk Analysis"}
+                            {loading ? "Analyzing Neural Patterns..." : "Run Semantic Analysis"}
                         </button>
                     </div>
 
                     {/* --- RESULTS GRID --- */}
-                    <div className="w-full max-w-6xl pb-20">
+                    <div className="w-full max-w-7xl px-4 pb-20 relative z-10">
                         {searched && !loading && data.length === 0 && (
-                            <div className="text-center text-gray-400 text-xl mt-10">No products found. Try a different keyword.</div>
+                            <div className="text-center mt-10 opacity-60">
+                                <p className="text-4xl mb-2">🚫</p>
+                                <p className="font-light">No risk patterns detected for this query.</p>
+                            </div>
                         )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -241,6 +332,7 @@
                             ))}
                         </div>
                     </div>
+
                 </div>
             );
         };
