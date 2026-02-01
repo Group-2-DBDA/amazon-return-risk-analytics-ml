@@ -1,0 +1,47 @@
+CREATE TABLE powerbi_joined_product_reviews
+WITH (
+    format = 'PARQUET',
+    external_location = 's3://amazon-curated-data/athena/powerbi-results/',
+    parquet_compression = 'SNAPPY'
+) AS
+SELECT
+    -- 🔑 Common key
+    m.parent_asin,
+
+    -- 🧾 Product Meta (Table 1)  [ final_meta22  table]
+    m.title,
+    m.main_category,
+    m.category,
+    m.brand,
+    m.manufacturer,
+    m.date_first_available,
+    m.store,
+
+    -- ✅ SAFE price conversion
+    TRY_CAST(NULLIF(m.price, '') AS DOUBLE) AS price,
+
+    m.average_rating AS product_avg_rating,
+    m.rating_number,
+
+    -- 📊 Review KPIs (Table 2)  [ final_review_kpis ]
+    r.total_reviews,
+    r.avg_rating AS review_avg_rating,
+    r.rating_volatility,
+    r.verified_reviews,
+    r.unverified_reviews,
+    r.verified_5_star_pct,
+    r.verified_1_star_pct,
+    r.unverified_5_star_pct,
+    r.unverified_1_star_pct,
+    r.reviews_with_helpful_votes,
+    r.helpful_vote_ratio,
+    r.avg_review_length,
+    r.avg_len_5_star,
+    r.avg_len_4_star,
+    r.avg_len_3_star,
+    r.avg_len_2_star,
+    r.avg_len_1_star
+
+FROM final_meta22 m
+LEFT JOIN final_review_kpis r
+    ON m.parent_asin = r.parent_asin;

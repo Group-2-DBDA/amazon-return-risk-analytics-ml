@@ -1,0 +1,44 @@
+CREATE TABLE final_master_product_kpis
+WITH (
+    format = 'PARQUET',
+    external_location = 's3://amazon-curated-data/final-athena-powerbi/',
+    parquet_compression = 'SNAPPY'
+) AS
+SELECT
+    -- 🔑 Common key
+    p.parent_asin,
+
+    -- 🧾 Product + Review Data (Table 1)
+    p.main_category,
+    p.category,
+    p.brand,
+    p.manufacturer,
+    p.store,
+
+    -- safe price handling
+    TRY_CAST(NULLIF(p.price, '') AS DOUBLE) AS price,
+
+    p.average_rating AS product_avg_rating,
+    p.rating_number,
+    p.date_first_available,
+    
+    p.total_reviews,
+    p.review_avg_rating,
+    p.rating_volatility,
+    p.verified_reviews,
+    p.unverified_reviews,
+    p.verified_5_star_pct,
+    p.unverified_5_star_pct,
+    p.reviews_with_helpful_votes,
+    p.avg_review_length,
+
+    -- ⚠️ Risk KPIs (Table 2)
+    r.analyzed_review_count,
+    r.risk_probability,
+    r.dominant_risk_driver,
+    r.defect_count,
+    r.sentiment_velocity
+
+FROM powerbi_joined_product_reviews p
+LEFT JOIN product_risk_kpis r
+    ON p.parent_asin = r.parent_asin;
