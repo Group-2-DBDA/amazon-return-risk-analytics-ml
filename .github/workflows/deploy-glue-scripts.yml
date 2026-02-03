@@ -26,9 +26,9 @@ jobs:
       - name: Upload Meta Glue Scripts
         run: |
           aws s3 sync aws_glue_scripts/meta/ \
-          "s3://glue-etl-job-7249/Etl on meta/scripts/"
+          s3://glue-etl-job-7249/etl/meta/scripts/
 
       - name: Upload Review Glue Scripts
         run: |
           aws s3 sync aws_glue_scripts/review/ \
-          "s3://glue-etl-job-7249/ETL on Review/scripts/"
+          s3://glue-etl-job-7249/etl/review/scripts/
