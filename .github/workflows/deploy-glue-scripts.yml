@@ -1,12 +1,12 @@
 name: Deploy AWS Glue Scripts to S3
 
 on:
-  workflow_dispatch:   # 👈 MANUAL TRIGGER
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - "aws_glue_scripts/*.py"
+      - "aws_glue_scripts/**"
 
 jobs:
   upload-glue-scripts:
@@ -23,12 +23,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Upload ETL on Meta Script
+      - name: Upload Meta Glue Scripts
         run: |
-          aws s3 cp "aws_glue_scripts/ETL on meta.py" \
-          "s3://glue-etl-job-7249/Etl on meta/scripts/ETL on meta.py"
+          aws s3 sync aws_glue_scripts/meta/ \
+          "s3://glue-etl-job-7249/Etl on meta/scripts/"
 
-      - name: Upload ETL on Review Script
+      - name: Upload Review Glue Scripts
         run: |
-          aws s3 cp "aws_glue_scripts/ETL on Reviews.py" \
-          "s3://glue-etl-job-7249/ETL on Review/scripts/ETL on Reviews.py"
+          aws s3 sync aws_glue_scripts/review/ \
+          "s3://glue-etl-job-7249/ETL on Review/scripts/"
