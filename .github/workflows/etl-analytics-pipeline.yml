@@ -91,8 +91,16 @@ jobs:
               break
             fi
 
-            sleep 60
+            sleep 10
           done
+
+    # ---------- ATHENA: DROP Previous FINAL TABLE ----------
+      - name: Drop auto_master_table if exists
+        run: |
+          aws athena start-query-execution \
+          --query-string "DROP TABLE IF EXISTS auto_master_table;" \
+          --query-execution-context Database=amazon_analytics \
+          --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
 
       # ---------- ATHENA: CLEAN FINAL OUTPUT ----------
       - name: Clean Athena final output location

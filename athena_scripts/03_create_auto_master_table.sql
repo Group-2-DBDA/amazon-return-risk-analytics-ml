@@ -1,4 +1,4 @@
-CREATE TABLE final_product_analytics
+CREATE TABLE auto_master_table
 WITH (
     format = 'PARQUET',
     external_location = 's3://amazon-curated-data/auto-master-table/',
