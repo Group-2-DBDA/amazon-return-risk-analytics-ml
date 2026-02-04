@@ -36,3 +36,14 @@ jobs:
           REVIEW_FILE=$(ls aws_glue_scripts/review/*.py | head -n 1)
           aws s3 cp "$REVIEW_FILE" \
           "s3://glue-etl-job-7249/ETL on Review/scripts/ETL on Reviews.py"
+
+      # ---------- RUN GLUE JOBS ----------
+      - name: Run Meta Glue Job
+        run: |
+          aws glue start-job-run \
+            --job-name ETL on Meta
+
+      - name: Run Review Glue Job
+        run: |
+          aws glue start-job-run \
+            --job-name ETL on Reviews
