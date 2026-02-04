@@ -58,7 +58,7 @@ jobs:
       - name: Create Athena auto_meta table
         run: |
           aws athena start-query-execution \
-            --query-string file://athena/01_create_auto_meta.sql \
+            --query-string file://athena_scripts/01_create_auto_meta.sql \
             --query-execution-context Database=amazon_analytics \
             --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
 
@@ -66,7 +66,7 @@ jobs:
       - name: Create Athena auto_review table
         run: |
           aws athena start-query-execution \
-            --query-string file://athena/02_create_auto_review.sql \
+            --query-string file://athena_scripts/02_create_auto_review.sql \
             --query-execution-context Database=amazon_analytics \
             --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
 
@@ -74,7 +74,7 @@ jobs:
       - name: Create final_product_analytics table For PowerBI
         run: |
           aws athena start-query-execution \
-            --query-string file://athena/03_create_auto_master_table.sql \
+            --query-string file://athena_scripts/03_create_auto_master_table.sql \
             --query-execution-context Database=amazon_analytics \
             --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
 
