@@ -7,15 +7,18 @@ on:
       - main
     paths:
       - "aws_glue_scripts/**"
+      - "athena_scripts/**"
 
 jobs:
-  upload-glue-scripts:
+  etl-analytics:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------- CHECKOUT ----------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ---------- AWS AUTH ----------
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -23,33 +26,75 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # ---------- META ----------
+      # ---------- UPLOAD META SCRIPT ----------
       - name: Upload Meta Glue Script (force rename)
         run: |
           META_FILE=$(ls aws_glue_scripts/meta/*.py | head -n 1)
           aws s3 cp "$META_FILE" \
-          "s3://glue-etl-job-7249/Etl on meta/scripts/ETL on meta.py"
+            "s3://glue-etl-job-7249/Etl on meta/scripts/ETL on meta.py"
 
-      # ---------- REVIEW ----------
+      # ---------- UPLOAD REVIEW SCRIPT ----------
       - name: Upload Review Glue Script (force rename)
         run: |
           REVIEW_FILE=$(ls aws_glue_scripts/review/*.py | head -n 1)
           aws s3 cp "$REVIEW_FILE" \
-          "s3://glue-etl-job-7249/ETL on Review/scripts/ETL on Reviews.py"
+            "s3://glue-etl-job-7249/ETL on Review/scripts/ETL on Reviews.py"
 
-      # ---------- RUN GLUE JOBS ----------
-      - name: Run Meta Glue Job
+      # ---------- START BOTH GLUE JOBS ----------
+      - name: Start Meta and Review Glue Jobs
         run: |
-          aws glue start-job-run \
-            --job-name "ETL on Meta"
+          echo "Starting Meta Glue Job..."
+          META_RUN_ID=$(aws glue start-job-run \
+            --job-name "ETL on Meta" \
+            --query JobRunId \
+            --output text)
 
-      - name: Run Review Glue Job
+          echo "Starting Review Glue Job..."
+          REVIEW_RUN_ID=$(aws glue start-job-run \
+            --job-name "ETL on Reviews" \
+            --query JobRunId \
+            --output text)
+
+          echo "META_RUN_ID=$META_RUN_ID" >> $GITHUB_ENV
+          echo "REVIEW_RUN_ID=$REVIEW_RUN_ID" >> $GITHUB_ENV
+
+          echo "Meta JobRunId: $META_RUN_ID"
+          echo "Review JobRunId: $REVIEW_RUN_ID"
+
+      # ---------- WAIT FOR BOTH GLUE JOBS ----------
+      - name: Wait for Meta and Review Glue Jobs to succeed
         run: |
-          aws glue start-job-run \
-            --job-name "ETL on Reviews"
-      # ---------- ATHENA QUERIES ----------
+          while true; do
+            META_STATUS=$(aws glue get-job-run \
+              --job-name "ETL on Meta" \
+              --run-id $META_RUN_ID \
+              --query JobRun.JobRunState \
+              --output text)
 
-            # ---------- ATHENA: CLEAN FINAL OUTPUT ----------
+            REVIEW_STATUS=$(aws glue get-job-run \
+              --job-name "ETL on Reviews" \
+              --run-id $REVIEW_RUN_ID \
+              --query JobRun.JobRunState \
+              --output text)
+
+            echo "Meta job status: $META_STATUS"
+            echo "Review job status: $REVIEW_STATUS"
+
+            if [[ "$META_STATUS" =~ (FAILED|STOPPED|TIMEOUT) ]] || \
+               [[ "$REVIEW_STATUS" =~ (FAILED|STOPPED|TIMEOUT) ]]; then
+              echo "One or more Glue jobs failed. Stopping pipeline."
+              exit 1
+            fi
+
+            if [[ "$META_STATUS" == "SUCCEEDED" && "$REVIEW_STATUS" == "SUCCEEDED" ]]; then
+              echo "Both Glue jobs succeeded."
+              break
+            fi
+
+            sleep 60
+          done
+
+      # ---------- ATHENA: CLEAN FINAL OUTPUT ----------
       - name: Clean Athena final output location
         run: |
           aws s3 rm s3://amazon-curated-data/auto-master-table/ --recursive
@@ -70,11 +115,10 @@ jobs:
             --query-execution-context Database=amazon_analytics \
             --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
 
-      # ---------- ATHENA: CREATE FINAL JOINED TABLE ----------
-      - name: Create final_product_analytics table For PowerBI
+      # ---------- ATHENA: CREATE FINAL MASTER TABLE ----------
+      - name: Create final_product_analytics table for Power BI
         run: |
           aws athena start-query-execution \
             --query-string file://athena_scripts/03_create_auto_master_table.sql \
             --query-execution-context Database=amazon_analytics \
             --result-configuration OutputLocation=s3://amazon-curated-data/logs-of-athena-result-automation/
-
