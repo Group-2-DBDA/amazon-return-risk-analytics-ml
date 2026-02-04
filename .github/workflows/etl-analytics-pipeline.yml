@@ -1,4 +1,4 @@
-name: Deploy AWS Glue Scripts to S3
+name: etl-analytics-pipeline
 
 on:
   workflow_dispatch:
