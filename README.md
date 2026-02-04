@@ -14,7 +14,7 @@ As a result, recommendation quality, product trust, and operational efficiency a
 
 ## 📂 Dataset
 **Source:** Amazon Reviews Dataset  
-**URL:** https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-023/tree/main/raw  
+**URL:** https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/tree/main/raw 
 
 The dataset contains:
 - Customer reviews
