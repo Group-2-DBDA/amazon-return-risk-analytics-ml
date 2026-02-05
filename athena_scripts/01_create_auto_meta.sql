@@ -4,8 +4,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS auto_meta (
     category STRING,
     brand STRING,
     manufacturer STRING,
-    date_first_available STRING,
     store STRING,
+    date_first_available STRING,
     price STRING,
     average_rating DOUBLE,
     rating_number BIGINT

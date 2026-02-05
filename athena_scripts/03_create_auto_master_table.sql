@@ -17,15 +17,12 @@ SELECT
     m.rating_number,
 
     r.total_reviews,
-    r.avg_rating AS review_avg_rating,
     r.rating_volatility,
     r.verified_reviews,
     r.unverified_reviews,
     r.reviews_with_helpful_votes,
-    r.helpful_vote_ratio,
-    r.avg_review_length,
 
-    k.analyzed_review_count,
+
     k.risk_probability,
     k.dominant_risk_driver,
     k.defect_count,

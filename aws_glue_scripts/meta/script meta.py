@@ -32,13 +32,12 @@ df = spark.read.json(SOURCE_PATH)
 # ------------------------------------------------
 df = df.select(
     col("parent_asin"),
-    col("title"),
     col("main_category"),
     col("categories")[0].alias("category"),
     col("details.Brand").alias("brand"),
     col("details.Manufacturer").alias("manufacturer"),
-    col("details.`Date First Available`").alias("date_first_available"),
     col("store"),
+    col("details.`Date First Available`").alias("date_first_available"),
     col("price").cast("string"),     # force STRING
     col("average_rating"),
     col("rating_number")
@@ -93,32 +92,6 @@ CUT_PATTERNS = [
     r"\bkit\b",
     r"\bcase\b"
 ]
-
-# Normalize title
-df = df.withColumn(
-    "title_clean",
-    lower(col("title"))
-)
-
-# Remove brackets content
-df = df.withColumn(
-    "title_clean",
-    regexp_replace(col("title_clean"), r"\(.*?\)", "")
-)
-
-# Remove special characters
-df = df.withColumn(
-    "title_clean",
-    regexp_replace(col("title_clean"), r"[^a-z0-9\s-]", "")
-)
-
-# Cut title at first structural boundary
-cut_regex = "(" + "|".join(CUT_PATTERNS) + ").*$"
-
-df = df.withColumn(
-    "title_prefix",
-    regexp_replace(col("title_clean"), cut_regex, "")
-)
 
 # ------------------------------------------------
 # WRITE CSV OUTPUT
