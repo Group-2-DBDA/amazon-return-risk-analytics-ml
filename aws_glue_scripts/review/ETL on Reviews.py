@@ -85,7 +85,8 @@ kpi_df = df.groupBy("parent_asin").agg(
 # --------------------------------------------------
 kpi_df.write \
     .mode("overwrite") \
-    .option("header", True) \
-    .csv(TARGET_PATH)
+    .option("compression", "snappy") \
+    .parquet(TARGET_PATH)
+
 
 spark.stop()

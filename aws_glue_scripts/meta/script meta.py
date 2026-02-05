@@ -125,5 +125,6 @@ df = df.withColumn(
 # ------------------------------------------------
 df.write \
     .mode("overwrite") \
-    .option("header", True) \
-    .csv(TARGET_PATH)
+    .option("compression", "snappy") \
+    .parquet(TARGET_PATH)
+
