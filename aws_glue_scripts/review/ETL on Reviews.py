@@ -28,6 +28,13 @@ df = spark.read.json(SOURCE_PATH)
 # --------------------------------------------------
 # DERIVED COLUMNS (FIXED NAMES)
 # --------------------------------------------------
+df = df.withColumn(
+    "review_length",
+    length(col("text"))
+).withColumn(
+    "has_helpful_vote",
+    when(col("helpful_vote") > 0, 1).otherwise(0)
+)
 
 # --------------------------------------------------
 # KPI AGGREGATION
@@ -39,6 +46,7 @@ kpi_df = df.groupBy("parent_asin").agg(
     count("*").alias("total_reviews"),
 
     # Ratings
+    round(avg("rating"), 2).alias("avg_rating"),
     round(stddev("rating"), 2).alias("rating_volatility"),
 
     # Verified vs Unverified
@@ -50,8 +58,9 @@ kpi_df = df.groupBy("parent_asin").agg(
     sum("has_helpful_vote").alias("reviews_with_helpful_votes"),
     
 
-   
+    
 
+    
 )
 
 # --------------------------------------------------
