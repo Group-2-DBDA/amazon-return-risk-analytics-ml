@@ -4,7 +4,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS auto_review (
     rating_volatility DOUBLE,
     verified_reviews INT,
     unverified_reviews INT,
-    reviews_with_helpful_votes INT,
+    reviews_with_helpful_votes INT
     
     
 )
