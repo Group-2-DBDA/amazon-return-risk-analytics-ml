@@ -35,37 +35,273 @@ The dataset contains:
 
 ---
 
-## 📊 Data Dictionary
+Got it 👍
+I’ve **scanned only the “Data Dictionary” section** from your PDF and converted it into a **clean, GitHub-friendly `README.md` script**.
+You can directly copy-paste this into your repository.
 
-### Review-Level Fields (Common Across Categories)
-| Column Name | Description |
-|------------|------------|
-| rating | Star rating given by user |
-| title | Review title |
-| text | Full review text |
-| images | Review image URLs |
-| asin | Amazon product ID |
-| parent_asin | Parent ASIN (product variation group) |
-| user_id | Unique reviewer ID |
-| timestamp | Review timestamp (Unix ms) |
-| helpful_vote | Helpful vote count |
-| verified_purchase | Verified purchase flag |
+Below content is strictly derived from **Section 4: Data Dictionary** of your file .
 
-### Product Metadata Fields
-| Column Name | Description |
-|------------|------------|
-| main_category | Top-level product category |
-| title | Product title |
-| average_rating | Average product rating |
-| rating_number | Total number of ratings |
-| features | Bullet-point product features |
-| description | Product description |
-| price | Product price |
-| images | Product images (thumb, large, hi-res) |
-| store | Seller / brand name |
-| categories | Category hierarchy |
-| details | Technical & packaging details |
-| parent_asin | Product group identifier |
+---
+
+## 📘 Data Dictionary
+
+This section describes the schema and structure of review-level and product-level datasets used in the project across multiple Amazon categories.
+
+---
+
+### 1️⃣ Amazon Fashion – Review Data
+
+| Column Name       | Data Type    | Description                           | Example                        |
+| ----------------- | ------------ | ------------------------------------- | ------------------------------ |
+| rating            | float        | Star rating given by the user         | 5.0                            |
+| title             | string       | Review title                          | "Such a lovely scent…"         |
+| text              | string       | Full review text                      | "This spray is really nice…"   |
+| images            | array/list   | List of image URLs (empty in dataset) | []                             |
+| asin              | string       | Amazon product ID                     | "B00YQ6X8EO"                   |
+| parent_asin       | string       | Parent ASIN (for variations)          | "B00YQ6X8EO"                   |
+| user_id           | string       | Unique reviewer ID                    | "AGKHLEW2SOWHNMFQIJGBECAF7INQ" |
+| timestamp         | long / int64 | Unix timestamp (milliseconds)         | 1588687728923                  |
+| helpful_vote      | integer      | Number of helpful votes               | 0                              |
+| verified_purchase | boolean      | Whether purchase is verified          | true / false                   |
+
+---
+
+### 2️⃣ Health & Household – Review Data
+
+| Column Name       | Data Type       | Description               | Example                        |
+| ----------------- | --------------- | ------------------------- | ------------------------------ |
+| rating            | float           | User rating (1–5 stars)   | 3.0                            |
+| title             | string          | Review title              | "Arrived Damaged…"             |
+| text              | string          | Full review text          | "Unfortunately Amazon…"        |
+| images            | array (objects) | Image URLs with size/type | [{"small_image_url": "..."}]   |
+| asin              | string          | Product ASIN              | "B096S6LZV4"                   |
+| parent_asin       | string          | Parent ASIN               | "B09NSZ5QMF"                   |
+| user_id           | string          | Reviewer ID               | "AFKZENTNBQ7A7V7UXW5JJI6UGRYQ" |
+| timestamp         | long / int64    | Unix timestamp (ms)       | 1677938767351                  |
+| helpful_vote      | integer         | Helpful votes             | 0                              |
+| verified_purchase | boolean         | Verified purchase flag    | true / false                   |
+
+---
+
+### 3️⃣ Musical Instruments – Review Data
+
+| Column Name       | Data Type       | Description            | Example                        |
+| ----------------- | --------------- | ---------------------- | ------------------------------ |
+| rating            | float           | Review rating          | 1.0 – 5.0                      |
+| title             | string          | Review title           | "Smells like gasoline!"        |
+| text              | string          | Full review text       | "First & most offensive…"      |
+| images            | array (objects) | Image metadata         | [{"small_image_url": "..."}]   |
+| asin              | string          | Product ASIN           | "B083NRGZMM"                   |
+| parent_asin       | string          | Parent ASIN            | "B083NRGZMM"                   |
+| user_id           | string          | Reviewer ID            | "AFKZENTNBQ7A7V7UXW5JJI6UGRYQ" |
+| timestamp         | long / int64    | Unix timestamp (ms)    | 1658185117948                  |
+| helpful_vote      | integer         | Helpful votes          | 0                              |
+| verified_purchase | boolean         | Verified purchase flag | true / false                   |
+
+---
+
+### 4️⃣ Appliances – Review Data (Common Schema)
+
+| Column Name       | Data Type    | Description                 |
+| ----------------- | ------------ | --------------------------- |
+| rating            | float / int  | Star rating                 |
+| title             | string       | Review title                |
+| text              | string       | Review text                 |
+| images            | array        | List of image URLs          |
+| asin              | string       | Product ASIN                |
+| parent_asin       | string       | Parent ASIN                 |
+| user_id           | string       | Reviewer ID                 |
+| timestamp         | long / int64 | Unix timestamp (ms)         |
+| helpful_vote      | int          | Helpful vote count          |
+| verified_purchase | boolean      | Verified purchase indicator |
+| style             | object/map   | Product variation metadata  |
+
+
+---
+
+This section documents the schema of **Amazon product metadata (Meta tables)** used across multiple categories. These datasets are used for analytics, NLP, product risk modeling, and dashboarding.
+
+---
+
+## 🧵 meta_Amazon_Fashion
+
+### Top-Level Fields
+
+| Column Name     | Data Type       | Description                                            | Additional Info                                   |
+| --------------- | --------------- | ------------------------------------------------------ | ------------------------------------------------- |
+| main_category   | String          | Main category under which the Amazon product is listed | Example: `"AMAZON FASHION"`                       |
+| title           | String          | Full product title as shown on Amazon                  | Useful for text analysis, NLP, keyword extraction |
+| average_rating  | Float           | Average customer rating for the product                | Range: 1.0–5.0                                    |
+| rating_number   | Integer         | Number of customer ratings received                    | Indicates popularity / reliability                |
+| features        | List            | Product features / bullet points                       | Empty list in this record                         |
+| description     | List            | Detailed product description                           | Empty list in this record                         |
+| price           | Float / Null    | Product price                                          | Null when price is missing                        |
+| images          | List of Objects | Contains multiple image versions of the product        | See image breakdown below                         |
+| videos          | List            | Videos related to the product                          | Empty for this item                               |
+| store           | String          | Seller or store name                                   | Example: `"GiveGift"`                             |
+| categories      | List            | Category / subcategory list                            | Empty here                                        |
+| details         | Object          | Detailed technical / packaging information             | See details section                               |
+| parent_asin     | String          | Parent ASIN (product group identifier)                 | Used for product variations                       |
+| bought_together | Null / Object   | Items frequently bought together                       | Null if no data                                   |
+
+### Images Object Structure
+
+| Field            | Data Type    | Description                         |
+| ---------------- | ------------ | ----------------------------------- |
+| images[].thumb   | String (URL) | Thumbnail image (low resolution)    |
+| images[].large   | String (URL) | Standard large image                |
+| images[].variant | String       | Image type (MAIN, PT01, PT02, etc.) |
+| images[].hi_res  | String (URL) | High-resolution image               |
+
+### Details Object
+
+| Field                | Data Type     | Description                      |
+| -------------------- | ------------- | -------------------------------- |
+| Package Dimensions   | String        | Package size and weight          |
+| Item model number    | String        | Manufacturer item/model code     |
+| Date First Available | String (Date) | Date product was first published |
+
+---
+
+## 🎁 Meta_Gift_Card
+
+### Top-Level Fields
+
+| Column Name     | Data Type       | Description                    | Additional Info     |
+| --------------- | --------------- | ------------------------------ | ------------------- |
+| main_category   | String          | Main product category          | `"Gift Cards"`      |
+| title           | String          | Full product title             | Gift Tag gift card  |
+| average_rating  | Float           | Average user rating            | 4.8                 |
+| rating_number   | Integer         | Number of ratings              | 1006                |
+| features        | List of Strings | Bullet-point features          | 8 features          |
+| description     | List of Strings | Product description paragraphs | 1 description       |
+| price           | Float / Null    | Product price                  | Null (value varies) |
+| images          | List of Objects | Product images                 | 5 images            |
+| videos          | List            | Product videos                 | Empty               |
+| store           | String          | Seller name                    | `"Amazon"`          |
+| categories      | List of Strings | Category hierarchy             | Gift Cards related  |
+| details         | Object          | Additional metadata            | See details         |
+| parent_asin     | String          | Parent ASIN                    | `"B06ZXTKYHN"`      |
+| bought_together | Null / Object   | Frequently bought together     | Null                |
+
+### Details Object
+
+| Field                | Data Type     | Description          |
+| -------------------- | ------------- | -------------------- |
+| Package Dimensions   | String        | Item size and weight |
+| Item model number    | String        | Model identifier     |
+| Date First Available | String (Date) | Listing date         |
+| Manufacturer         | String        | Producing company    |
+
+---
+
+## 🎸 Meta_Musical_Instruments
+
+### Common Fields
+
+| Field Name      | Data Type       | Description                |
+| --------------- | --------------- | -------------------------- |
+| main_category   | String          | Top-level category         |
+| title           | String          | Product name               |
+| average_rating  | Float           | Average rating (1.0–5.0)   |
+| rating_number   | Integer         | Total number of ratings    |
+| features        | List of Strings | Product features           |
+| description     | List of Strings | Long-form description      |
+| price           | Float / Null    | Product price              |
+| images          | List of Objects | Image metadata             |
+| videos          | List            | Product videos             |
+| store           | String          | Seller or brand            |
+| categories      | List of Strings | Category hierarchy         |
+| details         | Object          | Technical attributes       |
+| parent_asin     | String          | Parent ASIN                |
+| bought_together | String / Null   | Frequently bought together |
+
+### Product Examples
+
+#### 📦 FS-1051 FATSHARK TELEPORTER V3 HEADSET
+
+* **Category Path:** Electronics → Television & Video → Video Glasses
+* **Images:** 1 image (MAIN variant)
+
+| Field                        | Data Type     | Description    |
+| ---------------------------- | ------------- | -------------- |
+| details.Date First Available | String (Date) | August 2, 2014 |
+| details.Manufacturer         | String        | Fatshark       |
+
+#### 📦 Ce-H22B12-S1 4Kx2K HDMI 4-Port Splitter
+
+| Field                                   | Data Type     | Description         |
+| --------------------------------------- | ------------- | ------------------- |
+| details.Product Dimensions              | String        | Physical dimensions |
+| details.Item Weight                     | String        | Item weight         |
+| details.Item model number               | String        | Model identifier    |
+| details.Is Discontinued By Manufacturer | String        | Discontinued flag   |
+| details.Date First Available            | String (Date) | June 3, 2015        |
+| details.Manufacturer                    | String        | SIIG                |
+
+---
+
+## 🔌 meta_Appliances
+
+### Top-Level Fields
+
+| Field           | Data Type       | Description         |
+| --------------- | --------------- | ------------------- |
+| main_category   | String          | High-level category |
+| title           | String          | Product title       |
+| average_rating  | Float           | Average rating      |
+| rating_number   | Integer         | Rating count        |
+| features        | List of Strings | Product features    |
+| description     | List            | Product description |
+| price           | Float           | Product price       |
+| images          | List of Objects | Image metadata      |
+| videos          | List of Objects | Product videos      |
+| store           | String          | Brand or seller     |
+| categories      | List of Strings | Category hierarchy  |
+| details         | Object          | Product attributes  |
+| parent_asin     | String          | Parent ASIN         |
+| bought_together | Null            | No paired products  |
+
+---
+
+## 🏠 meta_Health_and_Household
+
+### Top-Level Fields
+
+| Field           | Data Type       | Description          |
+| --------------- | --------------- | -------------------- |
+| main_category   | Null            | Missing value        |
+| title           | String          | Product title        |
+| average_rating  | Float           | Average rating       |
+| rating_number   | Integer         | Rating count         |
+| features        | List of Strings | Feature list         |
+| description     | List of Strings | Product description  |
+| price           | Float           | Product price        |
+| images          | List of Objects | Image metadata       |
+| videos          | List            | Empty                |
+| store           | String          | Seller / brand       |
+| categories      | List of Strings | Category hierarchy   |
+| details         | Object          | Technical attributes |
+| parent_asin     | String          | ASIN                 |
+| bought_together | Null            | No related products  |
+
+### Details Object (Examples)
+
+| Field                   | Data Type                 |
+| ----------------------- | ------------------------- |
+| Item Package Dimensions | String                    |
+| Package Weight          | String                    |
+| Brand Name              | String                    |
+| Country of Origin       | String                    |
+| Model Name              | String                    |
+| Color                   | String                    |
+| Material                | String                    |
+| Manufacturer            | String                    |
+| Size                    | String                    |
+| Sport Type              | String                    |
+| Skill Level             | String                    |
+| Best Sellers Rank       | Object (String → Integer) |
+| Date First Available    | String (Date)             |
 
 ---
 
@@ -78,9 +314,7 @@ Likelihood (0–100%) that a product will be returned or receive a negative revi
 **Logic:**  
 Uses Bayesian Smoothing to avoid bias from small review counts.
 
-**Power BI Idea:**  
-- Gauge Chart  
-- Conditional formatting (Red if > 50%)
+
 
 ---
 
@@ -91,9 +325,7 @@ Most frequent reason for product failure (e.g., defects, shipping issues).
 **Logic:**  
 BERTopic-based clustering of negative reviews.
 
-**Power BI Idea:**  
-- Word Cloud  
-- Donut Chart (Defect Distribution)
+
 
 ---
 
@@ -101,26 +333,12 @@ BERTopic-based clustering of negative reviews.
 **Description:**  
 Total number of high-risk / negative reviews.
 
-**Power BI Idea:**  
-- Treemap  
-- KPI Card (Total Defects)
-
 ---
 
 ### 4️⃣ Sentiment Velocity
 **Description:**  
 Indicates whether product quality is improving or degrading over time.
 
-**Logic:**  
-Correlation between rating and review date.
-
-**Interpretation:**
-- +1.0 → Improving  
-- 0.0 → Stable  
-- -1.0 → Getting worse  
-
-**Power BI Idea:**  
-- Scatter Plot (Risk vs Sentiment Velocity)
 
 ---
 
@@ -128,22 +346,12 @@ Correlation between rating and review date.
 **Description:**  
 Number of reviews used to calculate KPIs (confidence indicator).
 
-**Power BI Idea:**  
-- Tooltip metric  
-- Minimum review count slicer
 
 ---
 
 ## 🏗️ Architecture
-**Data Flow:**
-
-JSON Reviews & Metadata  
-→ Amazon S3 (Raw Zone)  
-→ AWS Glue (Cleaning & Transformation)  
-→ Amazon S3 (Curated Zone)  
-→ Amazon Athena  
-→ Power BI (Analytics & Dashboards)  
-→ Amazon SageMaker (ML KPIs & Models)
+*
+<img width="2509" height="1220" alt="project Updated architecture (4)" src="https://github.com/user-attachments/assets/1d6ec255-3980-42ef-a58f-3b6f4816715a" />
 
 ---
 
@@ -164,8 +372,4 @@ JSON Reviews & Metadata
 
 ---
 
-## 🚀 Future Scope
-- Real-time return risk prediction
-- Seller-level quality scoring
-- Integration with live recommendation systems
-- Automated alerts for high-risk products
+
