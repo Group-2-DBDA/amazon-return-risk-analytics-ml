@@ -315,8 +315,9 @@ Number of reviews used to calculate KPIs (confidence indicator).
 ---
 
 ## 🏗️ Architecture
-*
-<img width="2509" height="1220" alt="project Updated architecture (4)" src="https://github.com/user-attachments/assets/1d6ec255-3980-42ef-a58f-3b6f4816715a" />
+![project architecture](https://github.com/user-attachments/assets/75fe7e36-4091-4d3d-b948-b41600be0537)
+
+
 
 ---
 
