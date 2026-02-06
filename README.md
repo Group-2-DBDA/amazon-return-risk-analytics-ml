@@ -33,13 +33,6 @@ The dataset contains:
 6. Build a quality-aware recommendation system suggesting alternative products with lower return risk.  
 7. Generate business insights for inventory planning, seller evaluation, and product quality improvement.
 
----
-
-Got it 👍
-I’ve **scanned only the “Data Dictionary” section** from your PDF and converted it into a **clean, GitHub-friendly `README.md` script**.
-You can directly copy-paste this into your repository.
-
-Below content is strictly derived from **Section 4: Data Dictionary** of your file .
 
 ---
 
