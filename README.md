@@ -161,37 +161,6 @@ This section documents the schema of **Amazon product metadata (Meta tables)** u
 | Item model number    | String        | Manufacturer item/model code     |
 | Date First Available | String (Date) | Date product was first published |
 
----
-
-## 🎁 Meta_Gift_Card
-
-### Top-Level Fields
-
-| Column Name     | Data Type       | Description                    | Additional Info     |
-| --------------- | --------------- | ------------------------------ | ------------------- |
-| main_category   | String          | Main product category          | `"Gift Cards"`      |
-| title           | String          | Full product title             | Gift Tag gift card  |
-| average_rating  | Float           | Average user rating            | 4.8                 |
-| rating_number   | Integer         | Number of ratings              | 1006                |
-| features        | List of Strings | Bullet-point features          | 8 features          |
-| description     | List of Strings | Product description paragraphs | 1 description       |
-| price           | Float / Null    | Product price                  | Null (value varies) |
-| images          | List of Objects | Product images                 | 5 images            |
-| videos          | List            | Product videos                 | Empty               |
-| store           | String          | Seller name                    | `"Amazon"`          |
-| categories      | List of Strings | Category hierarchy             | Gift Cards related  |
-| details         | Object          | Additional metadata            | See details         |
-| parent_asin     | String          | Parent ASIN                    | `"B06ZXTKYHN"`      |
-| bought_together | Null / Object   | Frequently bought together     | Null                |
-
-### Details Object
-
-| Field                | Data Type     | Description          |
-| -------------------- | ------------- | -------------------- |
-| Package Dimensions   | String        | Item size and weight |
-| Item model number    | String        | Model identifier     |
-| Date First Available | String (Date) | Listing date         |
-| Manufacturer         | String        | Producing company    |
 
 ---
 
@@ -218,17 +187,13 @@ This section documents the schema of **Amazon product metadata (Meta tables)** u
 
 ### Product Examples
 
-#### 📦 FS-1051 FATSHARK TELEPORTER V3 HEADSET
-
-* **Category Path:** Electronics → Television & Video → Video Glasses
-* **Images:** 1 image (MAIN variant)
 
 | Field                        | Data Type     | Description    |
 | ---------------------------- | ------------- | -------------- |
 | details.Date First Available | String (Date) | August 2, 2014 |
 | details.Manufacturer         | String        | Fatshark       |
 
-#### 📦 Ce-H22B12-S1 4Kx2K HDMI 4-Port Splitter
+
 
 | Field                                   | Data Type     | Description         |
 | --------------------------------------- | ------------- | ------------------- |
