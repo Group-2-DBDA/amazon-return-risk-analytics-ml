@@ -7,29 +7,29 @@ from pyspark.sql.functions import (
     lower, regexp_replace, split, expr
 )
 
-# ------------------------------------------------
+
 # READ JOB PARAMETERS
-# ------------------------------------------------
+
 args = getResolvedOptions(sys.argv, ['Source', 'Target'])
 
 SOURCE_PATH = args['Source']
 TARGET_PATH = args['Target']
 
-# ------------------------------------------------
+
 # INIT GLUE / SPARK
-# ------------------------------------------------
+
 sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 
-# ------------------------------------------------
+
 # READ JSONL METADATA
-# ------------------------------------------------
+
 df = spark.read.json(SOURCE_PATH)
 
-# ------------------------------------------------
+
 # SELECT + FLATTEN REQUIRED COLUMNS
-# ------------------------------------------------
+
 df = df.select(
     col("parent_asin"),
     col("main_category"),
@@ -43,9 +43,9 @@ df = df.select(
     col("rating_number")
 )
 
-# ------------------------------------------------
+
 # DATA CLEANING RULES
-# ------------------------------------------------
+
 
 # Replace empty / null brand with "Unbranded"
 df = df.withColumn(
@@ -75,9 +75,8 @@ df = df.withColumn(
     .otherwise(col("store"))
 )
 
-# ------------------------------------------------
+
 # PRODUCT NAME EXTRACTION (SIMPLE, SCALABLE)
-# ------------------------------------------------
 
 CUT_PATTERNS = [
     r"\bfor\b",
