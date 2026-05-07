@@ -67,4 +67,4 @@ for file in meta_files:
 for file in review_files:
     stream_to_s3(file, review_target)
 
-print("All files successfully streamed to S3 🚀")
+print("All files successfully streamed to S3 ")
